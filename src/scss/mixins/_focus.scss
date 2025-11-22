@@ -1,0 +1,17 @@
+@import "../variables.scss";
+
+@mixin focus {
+  outline: none;
+
+  &:focus:not(:disabled) {
+    box-shadow: $shadow-focus;
+  }
+
+  &:focus:not(:focus-visible) {
+    box-shadow: none;
+  }
+
+  &:focus-visible:not(:disabled) {
+    box-shadow: $shadow-focus;
+  }
+}

@@ -1,0 +1,72 @@
+@import "@/scss/mixins.scss";
+@import "@/scss/variables.scss";
+
+.select {
+  position: relative;
+  width: 100%;
+
+  &:hover:not(.select_disabled) {
+    .select__button {
+      border-color: var(--color-border-hover);
+    }
+  }
+
+  &:focus-within:not(.select_disabled) {
+    .select__button {
+      border-color: transparent;
+      box-shadow: $shadow-focus;
+    }
+  }
+}
+
+.select_disabled {
+  pointer-events: none;
+
+  .select__button {
+    background-color: var(--color-background-disabled);
+    border-color: var(--color-background-disabled);
+    cursor: default;
+  }
+
+  .select__button-value,
+  .select__button-icon {
+    color: var(--color-text-disabled);
+  }
+}
+
+.select_open {
+  .select__button-icon {
+    transform: rotate(180deg);
+  }
+}
+
+.select__button {
+  @include reset-button();
+  align-content: center;
+  background-color: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  box-sizing: border-box;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 1fr 14px;
+  height: 28px;
+  justify-content: space-between;
+  padding: 5.5px 7px;
+  transition: border-color $transition-time;
+  width: 100%;
+}
+
+.select__button-value {
+  @include textBody();
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.select__button-icon {
+  color: var(--color-icon);
+  height: 14px;
+  transition: transform $transition-time;
+  width: 14px;
+}

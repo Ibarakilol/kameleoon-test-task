@@ -1,0 +1,14 @@
+@import "../variables.scss";
+
+@mixin text($color, $size, $weight) {
+  color: $color;
+  font-family: $font-main;
+  font-size: $size;
+  font-weight: $weight;
+}
+
+@mixin textBody($color: var(--color-text-primary), $size: 12px, $weight: $font-weight-regular) {
+  @include text($color: $color, $size: $size, $weight: $weight);
+  letter-spacing: 0.25px;
+  line-height: 15px;
+}

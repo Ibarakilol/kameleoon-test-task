@@ -39,6 +39,7 @@ export default defineConfig([
       'no-case-declarations': 'off',
       'no-duplicate-imports': ['error', { includeExports: true }],
       'no-unused-vars': 'off',
+      'react-hooks/set-state-in-effect': 'off',
       'require-await': 'error',
       'simple-import-sort/exports': 'error',
       'simple-import-sort/imports': [
