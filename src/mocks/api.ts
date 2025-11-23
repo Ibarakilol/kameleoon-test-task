@@ -10,7 +10,6 @@ export const getMockedApiResponse = ({
   data,
   method,
   url,
-  params = {},
 }: Required<InternalAxiosRequestConfig>) => {
   let requestPayload: any = {};
 
@@ -26,18 +25,22 @@ export const getMockedApiResponse = ({
 
   const mockedResponses: Record<string, Record<string, any>> = {
     get: {
-      [ApiRoute.DATA]: () => {
-        const { variation = '0' } = params || {};
-        const data = MOCK_API_DATA.map((dataItem) => ({
-          conversions: dataItem.conversions[variation] || 0,
-          date: dataItem.date,
-          visits: dataItem.visits[variation] || 0,
-        }));
-
-        return { data };
-      },
       [ApiRoute.VARIATIONS]: () => {
         return { data: MOCK_API_VARIATIONS };
+      },
+    },
+    post: {
+      [ApiRoute.DATA]: () => {
+        const { variation } = requestPayload;
+        const data = variation
+          ? MOCK_API_DATA.map((dataItem) => ({
+              conversions: dataItem.conversions[variation] || 0,
+              date: dataItem.date,
+              visits: dataItem.visits[variation] || 0,
+            }))
+          : MOCK_API_DATA;
+
+        return { data };
       },
     },
   };

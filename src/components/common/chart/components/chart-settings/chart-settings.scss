@@ -1,0 +1,38 @@
+.chart-settings {
+  display: grid;
+  grid-auto-flow: column;
+  justify-content: space-between;
+}
+
+.chart-settings__filters {
+  display: grid;
+  gap: 8px;
+  grid-auto-flow: column;
+}
+
+.chart-settings__options {
+  display: grid;
+  gap: 20px;
+  grid-auto-flow: column;
+}
+
+.chart-settings__actions {
+  display: grid;
+  gap: 10px;
+  grid-auto-flow: column;
+}
+
+.chart-settings__zoom {
+  display: grid;
+  grid-auto-flow: column;
+}
+
+.chart-settings__zoom-out {
+  border-bottom-right-radius: 0;
+  border-top-right-radius: 0;
+}
+
+.chart-settings__zoom-in {
+  border-bottom-left-radius: 0;
+  border-top-left-radius: 0;
+}

@@ -10,15 +10,13 @@ const api = baseAxios.create({
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    const { config: { method = '', url = '', data = '', params = {} } = {} } =
-      error?.response || {};
+    const { config: { method = '', url = '', data = '' } = {} } = error?.response || error;
 
     return Promise.resolve(
       getMockedApiResponse({
         method,
         url,
         data,
-        params,
       } as Required<InternalAxiosRequestConfig>)
     );
   }

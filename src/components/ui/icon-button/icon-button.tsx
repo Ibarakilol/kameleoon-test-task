@@ -6,6 +6,7 @@ import type { IconButtonProps } from './icon-button.props';
 import './icon-button.scss';
 
 const IconButton = ({
+  className,
   ariaLabel,
   icon,
   isDisabled,
@@ -24,7 +25,7 @@ const IconButton = ({
 
   return (
     <button
-      className={clsx('icon-button', `icon-button_${theme}`, {
+      className={clsx('icon-button', `icon-button_${theme}`, className, {
         ['icon-button_disabled']: isDisabled,
       })}
       aria-label={ariaLabel}
