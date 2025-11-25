@@ -5,38 +5,44 @@ import Select from '@/components/ui/select';
 import MinusIcon from '@/assets/icons/minus.svg';
 import PlusIcon from '@/assets/icons/plus.svg';
 import RefreshIcon from '@/assets/icons/refresh.svg';
-import UnselectIcon from '@/assets/icons/unselect.svg';
 
+import { useTheme } from '@/contexts/theme-context';
+import { ThemeScheme } from '@/constants';
 import chartStore from '@/stores/chart-store';
 
 import './chart-settings.scss';
 
 const ChartSettings = observer(() => {
+  const { theme, toggleTheme } = useTheme();
   const {
     chartIntervalOptions,
     chartLineStyleOptions,
     chartVariationOptions,
     isChartDataLoading,
-    isLoading,
+    isChartVariationsLoading,
     selectedInterval,
     selectedLineStyle,
-    selectedVariation,
+    selectedVariations,
     setSelectedInterval,
     setSelectedLineStyle,
-    setSelectedVariation,
+    toggleVariation,
   } = chartStore;
+
+  const isLoading = isChartVariationsLoading || isChartDataLoading;
 
   return (
     <div className="chart-settings">
       <div className="chart-settings__filters">
         <Select
-          isDisabled={isLoading}
+          className="chart-settings__variations"
+          allLabel="All variations selected"
+          isDisabled={isChartVariationsLoading}
           items={chartVariationOptions}
-          value={selectedVariation}
-          onSelect={setSelectedVariation}
+          value={selectedVariations}
+          onSelect={toggleVariation}
         />
         <Select
-          isDisabled={isLoading || isChartDataLoading}
+          isDisabled={isLoading}
           items={chartIntervalOptions}
           value={selectedInterval}
           onSelect={setSelectedInterval}
@@ -44,34 +50,46 @@ const ChartSettings = observer(() => {
       </div>
       <div className="chart-settings__options">
         <Select
-          isDisabled={isLoading || isChartDataLoading}
+          isDisabled={isLoading}
           items={chartLineStyleOptions}
           prefix="Line style:"
           value={selectedLineStyle}
           onSelect={setSelectedLineStyle}
         />
         <div className="chart-settings__actions">
-          <IconButton ariaLabel="Unselect" icon={<UnselectIcon />} isDisabled onClick={() => {}} />
+          <div className="chart-settings__features">
+            <IconButton
+              ariaLabel="Toggle theme"
+              icon={theme === ThemeScheme.LIGHT ? <></> : <></>}
+              onClick={toggleTheme}
+            />
+            <IconButton
+              ariaLabel="Export chart"
+              icon={<></>}
+              isDisabled={isLoading}
+              onClick={() => {}}
+            />
+          </div>
 
           <div className="chart-settings__zoom">
             <IconButton
               className="chart-settings__zoom-out"
               ariaLabel="Zoom out"
               icon={<MinusIcon />}
-              isDisabled={isLoading || isChartDataLoading}
+              isDisabled={isLoading}
               onClick={() => {}}
             />
             <IconButton
               className="chart-settings__zoom-in"
               ariaLabel="Zoom in"
               icon={<PlusIcon />}
-              isDisabled={isLoading || isChartDataLoading}
+              isDisabled={isLoading}
               onClick={() => {}}
             />
             <IconButton
               ariaLabel="Reset zoom"
               icon={<RefreshIcon />}
-              isDisabled={isLoading || isChartDataLoading}
+              isDisabled={isLoading}
               theme="halo"
               onClick={() => {}}
             />

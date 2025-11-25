@@ -1,8 +1,19 @@
+@import "@/scss/mixins.scss";
+
 .chart {
   box-sizing: border-box;
   display: grid;
-  gap: 22.75px;
+  gap: 11px;
   max-width: 1351px;
   padding: 12px 24px 24px;
   width: 100%;
+}
+
+.chart__wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.chart__axis {
+  @include textAccent();
 }

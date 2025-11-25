@@ -14,9 +14,11 @@ export const fetchChartVariations = async (): Promise<TApiResponse<IChartVariati
   }
 };
 
-export const fetchChartData = async (variation?: string): Promise<TApiResponse<IChartData[]>> => {
+export const fetchChartData = async (
+  variations?: string[]
+): Promise<TApiResponse<IChartData[]>> => {
   try {
-    const result = await doPost<IChartData[]>(ApiRoute.DATA, { variation });
+    const result = await doPost<IChartData[]>(ApiRoute.DATA, { variations });
 
     return { isSuccess: true, data: result.data };
   } catch (err: any) {

@@ -31,14 +31,29 @@ export const getMockedApiResponse = ({
     },
     post: {
       [ApiRoute.DATA]: () => {
-        const { variation } = requestPayload;
-        const data = variation
-          ? MOCK_API_DATA.map((dataItem) => ({
-              conversions: dataItem.conversions[variation] || 0,
-              date: dataItem.date,
-              visits: dataItem.visits[variation] || 0,
-            }))
-          : MOCK_API_DATA;
+        const { variations } = requestPayload;
+        const data =
+          variations && variations.length
+            ? MOCK_API_DATA.map((dataItem) => {
+                const filteredConversions = Object.fromEntries(
+                  Object.entries(dataItem.conversions).filter(([variation]) =>
+                    variations.includes(variation)
+                  )
+                );
+
+                const filteredVisits = Object.fromEntries(
+                  Object.entries(dataItem.visits).filter(([variation]) =>
+                    variations.includes(variation)
+                  )
+                );
+
+                return {
+                  conversions: filteredConversions,
+                  date: dataItem.date,
+                  visits: filteredVisits,
+                };
+              })
+            : MOCK_API_DATA;
 
         return { data };
       },

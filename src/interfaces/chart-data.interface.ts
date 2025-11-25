@@ -8,3 +8,8 @@ export interface IChartData {
   date: string;
   visits: Record<string, number>;
 }
+
+export interface IChartLine {
+  conversionRate: number;
+  date: Date;
+}

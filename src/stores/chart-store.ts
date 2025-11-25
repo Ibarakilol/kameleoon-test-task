@@ -7,28 +7,24 @@ import type { IChartData, IChartVariation, ISelectOption } from '@/interfaces';
 
 class ChartStore {
   async init() {
-    this.setIsLoading(true);
-
-    await Promise.all([this.loadChartVariations(), this.loadChartData()]);
-
-    this.setIsLoading(false);
+    await this.loadChartVariations();
   }
 
   chartData: IChartData[] = [];
   chartVariations: IChartVariation[] = [];
   isChartDataLoading: boolean = false;
-  isLoading: boolean = false;
+  isChartVariationsLoading: boolean = false;
   selectedInterval: string = this.chartIntervalOptions[0].id;
   selectedLineStyle: string = this.chartLineStyleOptions[0].id;
-  selectedVariation: string = '';
+  selectedVariations: string[] = [];
 
   constructor() {
     makeAutoObservable(this, {}, { autoBind: true });
 
     reaction(
-      () => this.selectedVariation,
-      (selectedVariation) => {
-        this.loadChartData(selectedVariation);
+      () => this.selectedVariations,
+      (selectedVariations) => {
+        this.loadChartData(selectedVariations);
       }
     );
   }
@@ -45,8 +41,8 @@ class ChartStore {
     this.isChartDataLoading = isChartDataLoading;
   }
 
-  setIsLoading(isLoading: boolean) {
-    this.isLoading = isLoading;
+  setIsChartVariationsLoading(isChartVariationsLoading: boolean) {
+    this.isChartVariationsLoading = isChartVariationsLoading;
   }
 
   setSelectedInterval(selectedInterval: string) {
@@ -57,15 +53,25 @@ class ChartStore {
     this.selectedLineStyle = selectedLineStyle;
   }
 
-  setSelectedVariation(selectedVariation: string) {
-    this.selectedVariation = selectedVariation;
+  setSelectedVariations(selectedVariations: string[]) {
+    this.selectedVariations = selectedVariations;
+  }
+
+  toggleVariation(selectedVariation: string) {
+    if (this.selectedVariations.includes(selectedVariation)) {
+      this.setSelectedVariations(
+        this.selectedVariations.filter((item) => selectedVariation !== item)
+      );
+    } else {
+      this.setSelectedVariations([...this.selectedVariations, selectedVariation]);
+    }
   }
 
   clearStore() {
     this.setChartData([]);
     this.setChartVariations([]);
     this.setIsChartDataLoading(false);
-    this.setIsLoading(false);
+    this.setIsChartVariationsLoading(false);
   }
 
   get chartIntervalOptions() {
@@ -84,21 +90,22 @@ class ChartStore {
   }
 
   async loadChartVariations() {
+    this.setIsChartVariationsLoading(true);
+
     const { data, isSuccess } = await fetchChartVariations();
 
     if (isSuccess) {
       this.setChartVariations(data);
-
-      if (!this.selectedVariation) {
-        this.setSelectedVariation(this.chartVariationOptions[0].id);
-      }
+      this.setSelectedVariations([this.chartVariationOptions[0].id]);
     }
+
+    this.setIsChartVariationsLoading(false);
   }
 
-  async loadChartData(variation?: string) {
+  async loadChartData(variations?: string[]) {
     this.setIsChartDataLoading(true);
 
-    const { data, isSuccess } = await fetchChartData(variation);
+    const { data, isSuccess } = await fetchChartData(variations);
 
     if (isSuccess) {
       this.setChartData(data);

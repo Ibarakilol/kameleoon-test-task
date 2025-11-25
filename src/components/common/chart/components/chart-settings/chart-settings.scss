@@ -10,6 +10,10 @@
   grid-auto-flow: column;
 }
 
+.chart-settings__variations {
+  min-width: 161px;
+}
+
 .chart-settings__options {
   display: grid;
   gap: 20px;
@@ -19,6 +23,12 @@
 .chart-settings__actions {
   display: grid;
   gap: 10px;
+  grid-auto-flow: column;
+}
+
+.chart-settings__features {
+  display: grid;
+  gap: 2px;
   grid-auto-flow: column;
 }
 

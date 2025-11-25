@@ -12,3 +12,8 @@
   letter-spacing: 0.25px;
   line-height: 15px;
 }
+
+@mixin textAccent($color: var(--color-text-light), $size: 11px, $weight: $font-weight-medium) {
+  @include text($color: $color, $size: $size, $weight: $weight);
+  line-height: 12px;
+}

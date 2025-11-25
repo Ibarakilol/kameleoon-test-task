@@ -10,12 +10,23 @@ import type { SelectProps } from './select.props';
 
 import './select.scss';
 
-const Select = ({ isDisabled, isOptional, items, prefix, value, onSelect }: SelectProps) => {
+const Select = ({
+  className,
+  allLabel,
+  isDisabled,
+  isOptional,
+  items,
+  prefix,
+  value,
+  onSelect,
+}: SelectProps) => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [selectDropdownHeight, setSelectDropdownHeight] = useState<number>(0);
   const selectRef = useRef<HTMLDivElement | null>(null);
   const selectDropdownRef = useRef<HTMLDivElement | null>(null);
   const dropdownPosition = useElementPosition(selectRef, selectDropdownHeight);
+  const isSelectDisabled = isDisabled || !items.length;
+  const isMultiSelect = useMemo(() => Array.isArray(value), [value]);
 
   useEffect(() => {
     if (selectDropdownRef.current) {
@@ -29,39 +40,54 @@ const Select = ({ isDisabled, isOptional, items, prefix, value, onSelect }: Sele
 
   const handleChange = (item: ISelectOption | null) => {
     onSelect(item?.id ?? '', item);
-    setIsOpen(false);
+
+    if (!isMultiSelect) {
+      setIsOpen(false);
+    }
   };
 
   const currentValueLabel = useMemo(() => {
-    const valueLabel = items.find((item) => item.id === value)?.value;
+    if (!isMultiSelect) {
+      const valueLabel = items.find((item) => item.id === value)?.value;
 
-    if (!valueLabel) {
-      return '';
+      if (!valueLabel) {
+        return '';
+      }
+
+      return `${prefix ? `${prefix} ` : ''}${valueLabel}`;
     }
 
-    return `${prefix ? `${prefix} ` : ''}${valueLabel}`;
-  }, [items, prefix, value]);
+    if (items.length === value.length || value.length === 0) {
+      return allLabel ?? 'All';
+    }
+
+    return items
+      .filter((item) => value.includes(item.id))
+      .map((item) => item.value)
+      .join(', ');
+  }, [allLabel, isMultiSelect, items, prefix, value]);
 
   return (
     <div
-      className={clsx('select', {
-        select_disabled: isDisabled,
+      className={clsx('select', className, {
+        select_disabled: isSelectDisabled,
         select_open: isOpen,
       })}
       ref={selectRef}
     >
-      <button className="select__button" disabled={isDisabled} onClick={handleClick}>
+      <button className="select__button" disabled={isSelectDisabled} onClick={handleClick}>
         <span className="select__button-value">{currentValueLabel}</span>
         <ChevronIcon className="select__button-icon" />
       </button>
       {isOpen && (
         <SelectDropdown
           ref={selectDropdownRef}
-          handleChange={handleChange}
+          isMultiSelect={isMultiSelect}
           isOptional={isOptional}
           items={items}
           position={dropdownPosition}
           value={value}
+          handleChange={handleChange}
         />
       )}
     </div>

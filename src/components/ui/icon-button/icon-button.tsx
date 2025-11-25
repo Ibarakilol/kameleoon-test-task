@@ -26,7 +26,7 @@ const IconButton = ({
   return (
     <button
       className={clsx('icon-button', `icon-button_${theme}`, className, {
-        ['icon-button_disabled']: isDisabled,
+        'icon-button_disabled': isDisabled,
       })}
       aria-label={ariaLabel}
       disabled={isDisabled}
