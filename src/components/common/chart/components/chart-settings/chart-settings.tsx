@@ -2,17 +2,21 @@ import { observer } from 'mobx-react-lite';
 
 import IconButton from '@/components/ui/icon-button';
 import Select from '@/components/ui/select';
+import ExportIcon from '@/assets/icons/export.svg';
 import MinusIcon from '@/assets/icons/minus.svg';
+import MoonIcon from '@/assets/icons/moon.svg';
 import PlusIcon from '@/assets/icons/plus.svg';
 import RefreshIcon from '@/assets/icons/refresh.svg';
+import SunIcon from '@/assets/icons/sun.svg';
 
 import { useTheme } from '@/contexts/theme-context';
 import { ThemeScheme } from '@/constants';
 import chartStore from '@/stores/chart-store';
+import type { ChartSettingsProps } from './chart-settings.props';
 
 import './chart-settings.scss';
 
-const ChartSettings = observer(() => {
+const ChartSettings = observer(({ handleExportChart }: ChartSettingsProps) => {
   const { theme, toggleTheme } = useTheme();
   const {
     chartIntervalOptions,
@@ -60,14 +64,14 @@ const ChartSettings = observer(() => {
           <div className="chart-settings__features">
             <IconButton
               ariaLabel="Toggle theme"
-              icon={theme === ThemeScheme.LIGHT ? <></> : <></>}
+              icon={theme === ThemeScheme.LIGHT ? <SunIcon /> : <MoonIcon />}
               onClick={toggleTheme}
             />
             <IconButton
               ariaLabel="Export chart"
-              icon={<></>}
+              icon={<ExportIcon />}
               isDisabled={isLoading}
-              onClick={() => {}}
+              onClick={handleExportChart}
             />
           </div>
 

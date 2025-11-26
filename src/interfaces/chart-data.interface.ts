@@ -13,3 +13,16 @@ export interface IChartLine {
   conversionRate: number;
   date: Date;
 }
+
+export interface IChartPopupConversionRate {
+  conversionRate: number;
+  variationName: string;
+  variationColor: string;
+}
+
+export interface IChartPopupData {
+  conversionRates: IChartPopupConversionRate[];
+  date: string;
+  xAxis: number;
+  yAxis: number;
+}

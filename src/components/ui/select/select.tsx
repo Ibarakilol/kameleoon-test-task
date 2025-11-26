@@ -57,7 +57,7 @@ const Select = ({
       return `${prefix ? `${prefix} ` : ''}${valueLabel}`;
     }
 
-    if (items.length === value.length || value.length === 0) {
+    if (items.length === value.length || !value.length) {
       return allLabel ?? 'All';
     }
 

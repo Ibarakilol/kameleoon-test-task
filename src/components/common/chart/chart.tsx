@@ -1,17 +1,27 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import * as d3 from 'd3';
 import { observer } from 'mobx-react-lite';
 
+import ChartPopup from './components/chart-popup';
 import ChartSettings from './components/chart-settings';
 
 import chartStore from '@/stores/chart-store';
-import type { IChartLine } from '@/interfaces';
+import { exportHTMLToPNG } from '@/utils';
+import type { IChartLine, IChartPopupConversionRate, IChartPopupData } from '@/interfaces';
 
 import './chart.scss';
 
 const Chart = observer(() => {
-  const { chartData, selectedInterval, selectedLineStyle, selectedVariations, clearStore, init } =
-    chartStore;
+  const {
+    chartData,
+    chartVariations,
+    selectedInterval,
+    selectedLineStyle,
+    selectedVariations,
+    clearStore,
+    init,
+  } = chartStore;
+  const [chartPopupData, setChartPopupData] = useState<IChartPopupData | null>(null);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
 
@@ -51,7 +61,7 @@ const Chart = observer(() => {
       })),
     }));
 
-    const margin = { top: 12, right: 10, bottom: 20, left: 35 };
+    const margin = { top: 12, right: 15, bottom: 20, left: 35 };
     const width = wrapperRef.current.getBoundingClientRect().width - margin.left - margin.right;
     const height = 400 - margin.top - margin.bottom;
 
@@ -62,7 +72,7 @@ const Chart = observer(() => {
       .append('g')
       .attr('transform', `translate(${margin.left},${margin.top})`);
 
-    svg
+    const chartArea = svg
       .append('rect')
       .attr('x', 0)
       .attr('y', 0)
@@ -70,7 +80,8 @@ const Chart = observer(() => {
       .attr('height', height)
       .style('fill', 'none')
       .style('stroke', '#e1dfe7')
-      .style('stroke-width', 1);
+      .style('stroke-width', 1)
+      .style('pointer-events', 'all');
 
     const linesDataDates = linesData.flatMap(({ values }) => values.map(({ date }) => date));
 
@@ -110,6 +121,76 @@ const Chart = observer(() => {
     svg.append('g').attr('class', 'chart__axis').call(yAxis);
     svg.selectAll('.domain').remove();
 
+    const hoverLine = svg
+      .append('line')
+      .style('stroke', '#e1dfe7')
+      .style('stroke-width', 1)
+      .style('stroke-dasharray', '5')
+      .style('opacity', 0);
+
+    const bisectDate = d3.bisector((lineData: any) => lineData.date).left;
+
+    chartArea
+      .on('mousemove', (evt) => {
+        const [xCoord] = d3.pointer(evt);
+        const hoverDate = xScale.invert(xCoord);
+        const conversionRates: IChartPopupConversionRate[] = [];
+        let dateValue = '';
+        let xAxisValue = 0;
+        let yAxisValue = 0;
+
+        linesData.forEach(({ id, values }) => {
+          const idx = bisectDate(values, hoverDate, 0, values.length - 1);
+          const prevData = values[idx - 1];
+          const currentData = values[idx];
+          const { conversionRate, date } =
+            hoverDate.getTime() - prevData.date.getTime() >
+            currentData.date.getTime() - hoverDate.getTime()
+              ? currentData
+              : prevData;
+
+          if (!conversionRates.length) {
+            dateValue = d3.timeFormat('%d/%m/%Y')(date);
+            xAxisValue = xScale(date);
+            yAxisValue = yScale(conversionRate);
+          }
+
+          const variationName =
+            chartVariations.find((chartVariation) => {
+              if ('id' in chartVariation) {
+                return chartVariation.id?.toString() === id;
+              }
+
+              return id === '0';
+            })?.name ?? id;
+          conversionRates.push({ conversionRate, variationName, variationColor: colorScheme(id) });
+        });
+
+        if (conversionRates.length) {
+          const sortedConversionRates = conversionRates.sort(
+            (a, b) => b.conversionRate - a.conversionRate
+          );
+
+          setChartPopupData({
+            conversionRates: sortedConversionRates,
+            date: dateValue,
+            xAxis: xAxisValue,
+            yAxis: yAxisValue,
+          });
+
+          hoverLine
+            .attr('x1', xAxisValue)
+            .attr('x2', xAxisValue)
+            .attr('y1', 0)
+            .attr('y2', height)
+            .style('opacity', 1);
+        }
+      })
+      .on('mouseleave', () => {
+        setChartPopupData(null);
+        hoverLine.style('opacity', 0);
+      });
+
     const colorScheme = d3
       .scaleOrdinal<string>()
       .domain(filteredChartDataVariations)
@@ -129,7 +210,6 @@ const Chart = observer(() => {
         svg
           .append('path')
           .datum(values)
-          .attr('class', 'chart__area')
           .attr('d', area)
           .style('fill', lineColor)
           .style('fill-opacity', 0.3)
@@ -145,21 +225,25 @@ const Chart = observer(() => {
         svg
           .append('path')
           .datum(values)
-          .attr('class', 'chart__line')
           .attr('d', line)
           .style('stroke', lineColor)
           .style('fill', 'none')
           .style('stroke-width', 2);
       }
     });
-  }, [chartData, selectedInterval, selectedLineStyle, selectedVariations]);
+  }, [chartData, chartVariations, selectedInterval, selectedLineStyle, selectedVariations]);
+
+  const handleExportChart = async () => {
+    await exportHTMLToPNG(wrapperRef, 'chart');
+  };
 
   return (
     <div className="chart">
-      <ChartSettings />
+      <ChartSettings handleExportChart={handleExportChart} />
 
       <div className="chart__wrapper" ref={wrapperRef}>
         <svg ref={svgRef} />
+        {chartPopupData && <ChartPopup chartPopupData={chartPopupData} />}
       </div>
     </div>
   );

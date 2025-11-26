@@ -13,6 +13,11 @@
   line-height: 15px;
 }
 
+@mixin textCaption($color: var(--color-text-primary), $size: 12px, $weight: $font-weight-regular) {
+  @include text($color: $color, $size: $size, $weight: $weight);
+  line-height: 16px;
+}
+
 @mixin textAccent($color: var(--color-text-light), $size: 11px, $weight: $font-weight-medium) {
   @include text($color: $color, $size: $size, $weight: $weight);
   line-height: 12px;
