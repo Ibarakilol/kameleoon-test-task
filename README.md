@@ -1,7 +1,7 @@
 # Interactive Line Chart
 
 Тестовое задание: интерактивная линейная диаграмма для визуализации статистики A/B-тестов.\
-Демо: [GitHub Pages]('https://ibarakilol.github.io/kameleoon-test-task/)
+Демо: [GitHub Pages](https://ibarakilol.github.io/kameleoon-test-task/)
 
 ![Demo](public/demo.png)
 
