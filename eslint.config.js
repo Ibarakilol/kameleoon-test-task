@@ -50,9 +50,10 @@ export default defineConfig([
             [
               '^@/components/',
               'components',
-              '^\\.(\\.)?/((?!components)[a-z\\d-]+/)?[a-z\\d-]+$',
+              '^\\.(\\.)?/((?!components)[a-z\\d-]+/)?[a-z\\d-]+(?<!-store|/contexts)$',
               '^@/assets/',
             ],
+            ['^@/stores/', '^\\.(\\.)?/([a-z\\d-]+)-store$'],
             [
               '/contexts',
               '/hooks/',

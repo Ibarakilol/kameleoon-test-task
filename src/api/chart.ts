@@ -1,4 +1,4 @@
-import { doGet, doPost } from './axios-config';
+import { doGet } from './axios-config';
 
 import { ApiRoute } from '@/constants';
 import type { IChartData, IChartVariation, TApiResponse } from '@/interfaces';
@@ -14,11 +14,9 @@ export const fetchChartVariations = async (): Promise<TApiResponse<IChartVariati
   }
 };
 
-export const fetchChartData = async (
-  variations?: string[]
-): Promise<TApiResponse<IChartData[]>> => {
+export const fetchChartData = async (): Promise<TApiResponse<IChartData[]>> => {
   try {
-    const result = await doPost<IChartData[]>(ApiRoute.DATA, { variations });
+    const result = await doGet<IChartData[]>(ApiRoute.DATA);
 
     return { isSuccess: true, data: result.data };
   } catch (err: any) {

@@ -6,6 +6,9 @@
   --color-border-hover: #767676;
   --color-icon: #5e5d67;
   --color-scrollbar: #e1dfe7;
+  --color-shadow: #00000033;
+  --color-shadow-select-1: #0000000a;
+  --color-shadow-select-2: #00000029;
   --color-text-disabled: #c4c4c4;
   --color-text-light: #918f9a;
   --color-text-medium: #52515b;
@@ -13,12 +16,15 @@
 
   &[data-theme="dark"] {
     --color-background: #000027;
-    --color-background-disabled: #f2f2f2;
-    --color-background-hover: #f7f7f7;
+    --color-background-disabled: #01014b;
+    --color-background-hover: #020255;
     --color-border: #c7c5d0;
     --color-border-hover: #f7f7f7;
     --color-icon: #ffffff;
     --color-scrollbar: #e1dfe7;
+    --color-shadow: #ffffff33;
+    --color-shadow-select-1: #ffffff0a;
+    --color-shadow-select-2: #ffffff29;
     --color-text-disabled: #c4c4c4;
     --color-text-light: #ffffff;
     --color-text-medium: #ffffff;

@@ -28,34 +28,8 @@ export const getMockedApiResponse = ({
       [ApiRoute.VARIATIONS]: () => {
         return { data: MOCK_API_VARIATIONS };
       },
-    },
-    post: {
       [ApiRoute.DATA]: () => {
-        const { variations } = requestPayload;
-        const data =
-          variations && variations.length
-            ? MOCK_API_DATA.map((dataItem) => {
-                const filteredConversions = Object.fromEntries(
-                  Object.entries(dataItem.conversions).filter(([variation]) =>
-                    variations.includes(variation)
-                  )
-                );
-
-                const filteredVisits = Object.fromEntries(
-                  Object.entries(dataItem.visits).filter(([variation]) =>
-                    variations.includes(variation)
-                  )
-                );
-
-                return {
-                  conversions: filteredConversions,
-                  date: dataItem.date,
-                  visits: filteredVisits,
-                };
-              })
-            : MOCK_API_DATA;
-
-        return { data };
+        return { data: MOCK_API_DATA };
       },
     },
   };

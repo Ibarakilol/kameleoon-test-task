@@ -61,6 +61,13 @@
   position: absolute;
   top: 0;
   width: 0;
+
+  &:focus-visible + .checkbox__label {
+    .checkbox__square-icon {
+      border-color: transparent;
+      box-shadow: $shadow-focus;
+    }
+  }
 }
 
 .checkbox__label {

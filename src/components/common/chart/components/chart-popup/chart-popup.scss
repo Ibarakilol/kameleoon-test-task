@@ -4,7 +4,7 @@
   background-color: var(--color-background);
   border-radius: 6px;
   box-sizing: border-box;
-  box-shadow: 0 0 15px rgba($color: #000000, $alpha: 0.2);
+  box-shadow: 0 0 15px var(--color-shadow);
   display: grid;
   gap: 12px;
   max-height: 150px;

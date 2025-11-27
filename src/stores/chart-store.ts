@@ -1,4 +1,4 @@
-import { makeAutoObservable, reaction } from 'mobx';
+import { makeAutoObservable } from 'mobx';
 
 import { fetchChartData, fetchChartVariations } from '@/api';
 import { CHART_INTERVALS, CHART_LINE_STYLES } from '@/constants';
@@ -7,7 +7,7 @@ import type { IChartData, IChartVariation, ISelectOption } from '@/interfaces';
 
 class ChartStore {
   async init() {
-    await this.loadChartVariations();
+    await Promise.all([this.loadChartVariations(), this.loadChartData()]);
   }
 
   chartData: IChartData[] = [];
@@ -20,13 +20,6 @@ class ChartStore {
 
   constructor() {
     makeAutoObservable(this, {}, { autoBind: true });
-
-    reaction(
-      () => this.selectedVariations,
-      (selectedVariations) => {
-        this.loadChartData(selectedVariations);
-      }
-    );
   }
 
   setChartData(chartData: IChartData[]) {
@@ -89,6 +82,32 @@ class ChartStore {
     }));
   }
 
+  get filteredChartData() {
+    if (this.selectedVariations.length) {
+      return this.chartData.map((dataItem) => {
+        const filteredConversions = Object.fromEntries(
+          Object.entries(dataItem.conversions).filter(([variation]) =>
+            this.selectedVariations.includes(variation)
+          )
+        );
+
+        const filteredVisits = Object.fromEntries(
+          Object.entries(dataItem.visits).filter(([variation]) =>
+            this.selectedVariations.includes(variation)
+          )
+        );
+
+        return {
+          conversions: filteredConversions,
+          date: dataItem.date,
+          visits: filteredVisits,
+        };
+      });
+    }
+
+    return this.chartData;
+  }
+
   async loadChartVariations() {
     this.setIsChartVariationsLoading(true);
 
@@ -102,10 +121,10 @@ class ChartStore {
     this.setIsChartVariationsLoading(false);
   }
 
-  async loadChartData(variations?: string[]) {
+  async loadChartData() {
     this.setIsChartDataLoading(true);
 
-    const { data, isSuccess } = await fetchChartData(variations);
+    const { data, isSuccess } = await fetchChartData();
 
     if (isSuccess) {
       this.setChartData(data);

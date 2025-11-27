@@ -9,9 +9,10 @@ import PlusIcon from '@/assets/icons/plus.svg';
 import RefreshIcon from '@/assets/icons/refresh.svg';
 import SunIcon from '@/assets/icons/sun.svg';
 
+import chartStore from '@/stores/chart-store';
+
 import { useTheme } from '@/contexts/theme-context';
 import { ThemeScheme } from '@/constants';
-import chartStore from '@/stores/chart-store';
 import type { ChartSettingsProps } from './chart-settings.props';
 
 import './chart-settings.scss';

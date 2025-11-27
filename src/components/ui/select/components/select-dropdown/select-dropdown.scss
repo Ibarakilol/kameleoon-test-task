@@ -5,8 +5,8 @@
   background-color: var(--color-background);
   border-radius: 4px;
   box-shadow:
-    0 -1px 4px rgba($color: #000000, $alpha: 0.04),
-    0 2px 4px rgba($color: #000000, $alpha: 0.16);
+    0 -1px 4px var(--color-shadow-select-1),
+    0 2px 4px var(--color-shadow-select-2);
   overflow: hidden;
   position: absolute;
   width: 100%;
@@ -42,7 +42,7 @@
   word-break: break-word;
 
   &:hover,
-  &:focus {
+  &:focus-within {
     background-color: var(--color-background-hover);
   }
 }
