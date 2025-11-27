@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
+    "deploy": "gh-pages -d build",
     "optimize-svg": "svgo -r ./src/assets/icons",
     "lint": "yarn lint:ts && yarn lint:js",
     "lint:ts": "tsc -p tsconfig.json",

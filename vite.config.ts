@@ -6,6 +6,10 @@ import svgr from 'vite-plugin-svgr';
 
 // https://vite.dev/config/
 export default defineConfig({
+  base: '/kameleoon-test-task/',
+  build: {
+    outDir: 'build',
+  },
   css: {
     preprocessorOptions: {
       scss: {

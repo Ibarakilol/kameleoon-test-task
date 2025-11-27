@@ -8,7 +8,7 @@ import prettier from 'eslint-config-prettier';
 import simpleImportSort from 'eslint-plugin-simple-import-sort';
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  globalIgnores(['build']),
   {
     extends: [
       js.configs.recommended,

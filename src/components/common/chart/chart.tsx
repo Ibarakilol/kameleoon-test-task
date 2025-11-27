@@ -27,6 +27,9 @@ const Chart = observer(() => {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const popupRef = useRef<HTMLDivElement | null>(null);
   const hidePopup = useRef<(() => void) | null>(null);
+  const zoomRef = useRef<d3.ZoomBehavior<SVGSVGElement, unknown> | null>(null);
+  const zoomTransformRef = useRef(d3.zoomIdentity);
+  const hoverLineXRef = useRef<number | null>(null);
 
   useEffect(() => {
     void init();
@@ -75,6 +78,48 @@ const Chart = observer(() => {
       .append('g')
       .attr('transform', `translate(${margin.left},${margin.top})`);
 
+    zoomRef.current = d3
+      .zoom<SVGSVGElement, unknown>()
+      .scaleExtent([1, 8])
+      .translateExtent([
+        [0, 0],
+        [width, height],
+      ])
+      .on('zoom', (evt) => {
+        zoomTransformRef.current = evt.transform;
+        const newX = evt.transform.rescaleX(xScale);
+
+        svg.select<SVGGElement>('.chart__x-axis').call(xAxis.scale(newX));
+
+        svg.selectAll<SVGPathElement, IChartLine[]>('path.chart__line').attr('d', (datum) =>
+          d3
+            .line<IChartLine>()
+            .x(({ date }) => newX(date))
+            .y(({ conversionRate }) => yScale(conversionRate))
+            .curve(selectedLineStyle === 'smooth' ? d3.curveMonotoneX : d3.curveLinear)(datum)
+        );
+
+        svg.selectAll<SVGPathElement, IChartLine[]>('path.chart__area').attr('d', (datum) =>
+          d3
+            .area<IChartLine>()
+            .x(({ date }) => newX(date))
+            .y0(height)
+            .y1(({ conversionRate }) => yScale(conversionRate))
+            .curve(d3.curveMonotoneX)(datum)
+        );
+
+        if (hoverLineXRef.current) {
+          const hoverLineX = evt.transform.applyX(hoverLineXRef.current);
+
+          svg
+            .select('.chart__hover-line')
+            .attr('x1', evt.transform.applyX(hoverLineX))
+            .attr('x2', evt.transform.applyX(hoverLineX));
+        }
+      });
+
+    d3.select(svgRef.current).call(zoomRef.current!);
+
     const chartArea = svg
       .append('rect')
       .attr('x', 0)
@@ -118,14 +163,15 @@ const Chart = observer(() => {
 
     svg
       .append('g')
-      .attr('class', 'chart__axis')
+      .attr('class', 'chart__x-axis')
       .attr('transform', `translate(0,${height})`)
       .call(xAxis);
-    svg.append('g').attr('class', 'chart__axis').call(yAxis);
+    svg.append('g').attr('class', 'chart__y-axis').call(yAxis);
     svg.selectAll('.domain').remove();
 
     const hoverLine = svg
       .append('line')
+      .attr('class', 'chart__hover-line')
       .style('stroke', '#e1dfe7')
       .style('stroke-width', 1)
       .style('stroke-dasharray', '5')
@@ -187,6 +233,8 @@ const Chart = observer(() => {
           .attr('y1', 0)
           .attr('y2', height)
           .style('opacity', 1);
+
+        hoverLineXRef.current = xAxisValue;
       }
     };
 
@@ -221,6 +269,7 @@ const Chart = observer(() => {
         svg
           .append('path')
           .datum(values)
+          .attr('class', 'chart__area')
           .attr('d', area)
           .style('fill', lineColor)
           .style('fill-opacity', 0.3)
@@ -239,6 +288,7 @@ const Chart = observer(() => {
         svg
           .append('path')
           .datum(values)
+          .attr('class', 'chart__line')
           .attr('d', line)
           .style('stroke', lineColor)
           .style('fill', 'none')
@@ -254,9 +304,43 @@ const Chart = observer(() => {
     await exportHTMLToPNG(wrapperRef, 'chart');
   };
 
+  const handleZoomIn = () => {
+    if (!zoomRef.current || !svgRef.current) {
+      return;
+    }
+
+    d3.select(svgRef.current).transition().duration(250).call(zoomRef.current.scaleBy, 1.3);
+  };
+
+  const handleZoomOut = () => {
+    if (!zoomRef.current || !svgRef.current) {
+      return;
+    }
+
+    d3.select(svgRef.current).transition().duration(250).call(zoomRef.current.scaleBy, 0.7);
+  };
+
+  const handleZoomReset = () => {
+    if (!zoomRef.current || !svgRef.current) {
+      return;
+    }
+
+    d3.select(svgRef.current)
+      .transition()
+      .duration(300)
+      .call(zoomRef.current.transform, d3.zoomIdentity);
+
+    zoomTransformRef.current = d3.zoomIdentity;
+  };
+
   return (
     <div className="chart">
-      <ChartSettings handleExportChart={handleExportChart} />
+      <ChartSettings
+        handleExportChart={handleExportChart}
+        handleZoomIn={handleZoomIn}
+        handleZoomOut={handleZoomOut}
+        handleZoomReset={handleZoomReset}
+      />
 
       <div className="chart__wrapper" ref={wrapperRef}>
         <svg ref={svgRef} />

@@ -13,6 +13,7 @@
   position: relative;
 }
 
-.chart__axis {
+.chart__x-axis,
+.chart__y-axis {
   @include textAccent();
 }
