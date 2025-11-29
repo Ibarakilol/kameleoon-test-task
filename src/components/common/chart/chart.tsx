@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as d3 from 'd3';
 import { observer } from 'mobx-react-lite';
 
@@ -7,6 +7,7 @@ import ChartSettings from './components/chart-settings';
 
 import chartStore from '@/stores/chart-store';
 
+import { useResizeObserver } from '@/hooks';
 import { exportHTMLToPNG } from '@/utils';
 import type { IChartLine, IChartPopupConversionRate, IChartPopupData } from '@/interfaces';
 
@@ -18,10 +19,10 @@ const Chart = observer(() => {
     filteredChartData,
     selectedInterval,
     selectedLineStyle,
-    selectedVariations,
     clearStore,
     init,
   } = chartStore;
+  const { linesData, variations } = filteredChartData;
   const [chartPopupData, setChartPopupData] = useState<IChartPopupData | null>(null);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -29,15 +30,71 @@ const Chart = observer(() => {
   const hidePopup = useRef<(() => void) | null>(null);
   const zoomRef = useRef<d3.ZoomBehavior<SVGSVGElement, unknown> | null>(null);
   const zoomTransformRef = useRef(d3.zoomIdentity);
-  const hoverLineXRef = useRef<number | null>(null);
+  const [dimensions, setDimensions] = useState({ height: 300, width: 1303 });
+  const margin = useMemo(() => ({ top: 12, right: 15, bottom: 20, left: 35 }), []);
+
+  const updateDimensions = useCallback(() => {
+    if (!wrapperRef.current) {
+      return;
+    }
+
+    const height = 300 - margin.top - margin.bottom;
+    const width = wrapperRef.current.getBoundingClientRect().width - margin.left - margin.right;
+
+    setDimensions({ height, width });
+  }, [margin]);
+
+  useResizeObserver(wrapperRef, updateDimensions);
+
+  const handleExportChart = async () => {
+    await exportHTMLToPNG(wrapperRef, 'chart');
+  };
+
+  const handleChartZoom = (zoom: 'in' | 'out' | 'reset') => {
+    if (!zoomRef.current || !svgRef.current) {
+      return;
+    }
+
+    const selection = d3.select(svgRef.current).transition().duration(250);
+    const currentTransform = zoomTransformRef.current;
+    let newScale: number;
+
+    const resetZoom = () => {
+      selection.call(zoomRef.current!.transform, d3.zoomIdentity);
+      zoomTransformRef.current = d3.zoomIdentity;
+    };
+
+    switch (zoom) {
+      case 'in':
+        newScale = Math.min(8, currentTransform.k * 1.3);
+        selection.call(zoomRef.current.scaleTo, newScale);
+        break;
+      case 'out':
+        newScale = Math.max(1, currentTransform.k * 0.7);
+
+        if (newScale <= 1.1) {
+          resetZoom();
+        } else {
+          selection.call(zoomRef.current.scaleTo, newScale);
+        }
+
+        break;
+      case 'reset':
+        resetZoom();
+        break;
+      default:
+        return;
+    }
+  };
 
   useEffect(() => {
     void init();
+    updateDimensions();
 
     return () => {
       clearStore();
     };
-  }, [clearStore, init]);
+  }, [clearStore, init, updateDimensions]);
 
   useEffect(() => {
     if (!wrapperRef.current || !svgRef.current) {
@@ -46,34 +103,11 @@ const Chart = observer(() => {
 
     d3.select(svgRef.current).selectAll('*').remove();
 
-    const chartDataVariations = Array.from(
-      new Set(
-        filteredChartData.flatMap(({ conversions, visits }) => [
-          ...Object.keys(conversions),
-          ...Object.keys(visits),
-        ])
-      )
-    );
-
-    const filteredChartDataVariations = selectedVariations.length
-      ? chartDataVariations.filter((variation) => selectedVariations.includes(variation))
-      : chartDataVariations;
-
-    const linesData = filteredChartDataVariations.map((variation) => ({
-      id: variation,
-      values: filteredChartData.map(({ conversions, date, visits }) => ({
-        date: new Date(date),
-        conversionRate: ((conversions[variation] || 0) / (visits[variation] || 1)) * 100,
-      })),
-    }));
-
-    const margin = { top: 12, right: 15, bottom: 20, left: 35 };
-    const width = wrapperRef.current.getBoundingClientRect().width - margin.left - margin.right;
-    const height = 400 - margin.top - margin.bottom;
+    const { height, width } = dimensions;
 
     const svg = d3
       .select(svgRef.current)
-      .attr('width', width + margin.left + margin.right)
+      .attr('width', '100%')
       .attr('height', height + margin.top + margin.bottom)
       .append('g')
       .attr('transform', `translate(${margin.left},${margin.top})`);
@@ -107,15 +141,6 @@ const Chart = observer(() => {
             .y1(({ conversionRate }) => yScale(conversionRate))
             .curve(d3.curveMonotoneX)(datum)
         );
-
-        if (hoverLineXRef.current) {
-          const hoverLineX = evt.transform.applyX(hoverLineXRef.current);
-
-          svg
-            .select('.chart__hover-line')
-            .attr('x1', evt.transform.applyX(hoverLineX))
-            .attr('x2', evt.transform.applyX(hoverLineX));
-        }
       });
 
     d3.select(svgRef.current).call(zoomRef.current!);
@@ -132,15 +157,14 @@ const Chart = observer(() => {
       .style('pointer-events', 'all');
 
     const linesDataDates = linesData.flatMap(({ values }) => values.map(({ date }) => date));
+    const linesDataConversionRates = linesData.flatMap(({ values }) =>
+      values.map(({ conversionRate }) => conversionRate)
+    );
 
     const xScale = d3
       .scaleTime()
       .domain(d3.extent(linesDataDates) as [Date, Date])
       .range([0, width]);
-
-    const linesDataConversionRates = linesData.flatMap(({ values }) =>
-      values.map(({ conversionRate }) => conversionRate)
-    );
 
     const yScale = d3
       .scaleLinear()
@@ -171,12 +195,11 @@ const Chart = observer(() => {
 
     const hoverLine = svg
       .append('line')
-      .attr('class', 'chart__hover-line')
       .style('stroke', '#e1dfe7')
       .style('stroke-width', 1)
       .style('stroke-dasharray', '5')
       .style('opacity', 0)
-      .style('pointer-events', 'all');
+      .style('pointer-events', 'none');
 
     const bisectDate = d3.bisector((lineData: any) => lineData.date).left;
 
@@ -189,14 +212,21 @@ const Chart = observer(() => {
       let yAxisValue = 0;
 
       linesData.forEach(({ id, values }) => {
+        if (!values.length) {
+          return;
+        }
+
         const idx = bisectDate(values, hoverDate, 0, values.length - 1);
-        const prevData = values[idx - 1];
+        const prevData = values[Math.max(0, idx - 1)];
         const currentData = values[idx];
-        const { conversionRate, date } =
-          hoverDate.getTime() - prevData.date.getTime() >
-          currentData.date.getTime() - hoverDate.getTime()
-            ? currentData
-            : prevData;
+        const { conversionRate, date } = !idx
+          ? currentData
+          : idx === values.length
+            ? prevData
+            : hoverDate.getTime() - prevData.date.getTime() >
+                currentData.date.getTime() - hoverDate.getTime()
+              ? currentData
+              : prevData;
 
         if (!conversionRates.length) {
           dateValue = d3.timeFormat('%d/%m/%Y')(date);
@@ -233,8 +263,6 @@ const Chart = observer(() => {
           .attr('y1', 0)
           .attr('y2', height)
           .style('opacity', 1);
-
-        hoverLineXRef.current = xAxisValue;
       }
     };
 
@@ -248,12 +276,8 @@ const Chart = observer(() => {
     };
 
     chartArea.on('mousemove', updatePopup).on('mouseleave', hidePopup.current);
-    hoverLine.on('mousemove', updatePopup).on('mouseleave', hidePopup.current);
 
-    const colorScheme = d3
-      .scaleOrdinal<string>()
-      .domain(filteredChartDataVariations)
-      .range(d3.schemeCategory10);
+    const colorScheme = d3.scaleOrdinal<string>().domain(variations).range(d3.schemeCategory10);
 
     linesData.forEach(({ id, values }) => {
       const lineColor = colorScheme(id);
@@ -275,9 +299,7 @@ const Chart = observer(() => {
           .style('fill-opacity', 0.3)
           .style('stroke', lineColor)
           .style('stroke-width', 1)
-          .style('pointer-events', 'all')
-          .on('mousemove', updatePopup)
-          .on('mouseleave', hidePopup.current!);
+          .style('pointer-events', 'none');
       } else {
         const line = d3
           .line<IChartLine>()
@@ -293,53 +315,26 @@ const Chart = observer(() => {
           .style('stroke', lineColor)
           .style('fill', 'none')
           .style('stroke-width', 2)
-          .style('pointer-events', 'all')
-          .on('mousemove', updatePopup)
-          .on('mouseleave', hidePopup.current!);
+          .style('pointer-events', 'none');
       }
     });
-  }, [filteredChartData, chartVariations, selectedInterval, selectedLineStyle, selectedVariations]);
-
-  const handleExportChart = async () => {
-    await exportHTMLToPNG(wrapperRef, 'chart');
-  };
-
-  const handleZoomIn = () => {
-    if (!zoomRef.current || !svgRef.current) {
-      return;
-    }
-
-    d3.select(svgRef.current).transition().duration(250).call(zoomRef.current.scaleBy, 1.3);
-  };
-
-  const handleZoomOut = () => {
-    if (!zoomRef.current || !svgRef.current) {
-      return;
-    }
-
-    d3.select(svgRef.current).transition().duration(250).call(zoomRef.current.scaleBy, 0.7);
-  };
-
-  const handleZoomReset = () => {
-    if (!zoomRef.current || !svgRef.current) {
-      return;
-    }
-
-    d3.select(svgRef.current)
-      .transition()
-      .duration(300)
-      .call(zoomRef.current.transform, d3.zoomIdentity);
-
-    zoomTransformRef.current = d3.zoomIdentity;
-  };
+  }, [
+    chartVariations,
+    dimensions,
+    linesData,
+    margin,
+    selectedInterval,
+    selectedLineStyle,
+    variations,
+  ]);
 
   return (
     <div className="chart">
       <ChartSettings
         handleExportChart={handleExportChart}
-        handleZoomIn={handleZoomIn}
-        handleZoomOut={handleZoomOut}
-        handleZoomReset={handleZoomReset}
+        handleZoomIn={() => handleChartZoom('in')}
+        handleZoomOut={() => handleChartZoom('out')}
+        handleZoomReset={() => handleChartZoom('reset')}
       />
 
       <div className="chart__wrapper" ref={wrapperRef}>

@@ -83,29 +83,42 @@ class ChartStore {
   }
 
   get filteredChartData() {
-    if (this.selectedVariations.length) {
-      return this.chartData.map((dataItem) => {
-        const filteredConversions = Object.fromEntries(
-          Object.entries(dataItem.conversions).filter(([variation]) =>
-            this.selectedVariations.includes(variation)
+    const variations = this.selectedVariations.length
+      ? this.selectedVariations
+      : Array.from(
+          new Set(
+            this.chartData.flatMap(({ conversions, visits }) => [
+              ...Object.keys(conversions),
+              ...Object.keys(visits),
+            ])
           )
         );
 
-        const filteredVisits = Object.fromEntries(
-          Object.entries(dataItem.visits).filter(([variation]) =>
-            this.selectedVariations.includes(variation)
-          )
-        );
+    const data = this.selectedVariations.length
+      ? this.chartData.map(({ conversions, date, visits }) => ({
+          conversions: Object.fromEntries(
+            Object.entries(conversions).filter(([variation]) =>
+              this.selectedVariations.includes(variation)
+            )
+          ),
+          date,
+          visits: Object.fromEntries(
+            Object.entries(visits).filter(([variation]) =>
+              this.selectedVariations.includes(variation)
+            )
+          ),
+        }))
+      : this.chartData;
 
-        return {
-          conversions: filteredConversions,
-          date: dataItem.date,
-          visits: filteredVisits,
-        };
-      });
-    }
+    const linesData = variations.map((variation) => ({
+      id: variation,
+      values: data.map(({ conversions, date, visits }) => ({
+        date: new Date(date),
+        conversionRate: ((conversions[variation] || 0) / (visits[variation] || 1)) * 100,
+      })),
+    }));
 
-    return this.chartData;
+    return { linesData, variations };
   }
 
   async loadChartVariations() {

@@ -2,22 +2,22 @@ import { type RefObject, useEffect } from 'react';
 
 export const useOnClickOutside = (
   ref: RefObject<HTMLDivElement | null> | RefObject<HTMLDivElement | null>[],
-  onClick: (e?: any) => void,
+  onClick: (evt?: any) => void,
   isListenerStopped: boolean = false
 ) => {
   useEffect(() => {
-    const listener = (e: any) => {
+    const listener = (evt: any) => {
       if (Array.isArray(ref)) {
-        if (ref.some((ref) => !ref?.current || ref.current.contains(e.target))) {
+        if (ref.some((ref) => !ref?.current || ref.current.contains(evt.target))) {
           return;
         }
       } else {
-        if (!ref?.current || ref.current.contains(e.target)) {
+        if (!ref?.current || ref.current.contains(evt.target)) {
           return;
         }
       }
 
-      onClick(e);
+      onClick(evt);
     };
 
     if (!isListenerStopped) {
