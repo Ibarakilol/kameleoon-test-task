@@ -1,8 +1,10 @@
-import { forwardRef } from 'react';
+import { forwardRef, useRef } from 'react';
 
 import CalendarIcon from '@/assets/icons/calendar.svg';
 import TrophyIcon from '@/assets/icons/trophy.svg';
 
+import { Position } from '@/constants';
+import { useCombinedRefs, useElementPosition } from '@/hooks';
 import type { ChartPopupProps } from './chart-popup.props';
 
 import './chart-popup.scss';
@@ -10,12 +12,18 @@ import './chart-popup.scss';
 const ChartPopup = forwardRef<HTMLDivElement, ChartPopupProps>(
   ({ chartPopupData, handleMouseLeave }, ref) => {
     const { conversionRates, date, xAxis, yAxis } = chartPopupData;
+    const chartPopupRef = useRef<HTMLDivElement | null>(null);
+    const chartPopupCombinedRefs = useCombinedRefs(ref, chartPopupRef);
+    const chartPopupPosition = useElementPosition(chartPopupCombinedRefs, Position.RIGHT, 228);
 
     return (
       <div
         className="chart-popup"
-        ref={ref}
-        style={{ left: xAxis + 35, top: yAxis + 12 }}
+        ref={chartPopupCombinedRefs}
+        style={{
+          left: chartPopupPosition === Position.RIGHT ? xAxis + 35 : xAxis - 228 + 35,
+          top: yAxis + 12,
+        }}
         onMouseLeave={handleMouseLeave}
       >
         <div className="chart-popup__heading">

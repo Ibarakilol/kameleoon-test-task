@@ -4,6 +4,7 @@ import clsx from 'clsx';
 import SelectDropdown from './components/select-dropdown';
 import ChevronIcon from '@/assets/icons/chevron.svg';
 
+import { Position } from '@/constants';
 import { useElementPosition, useOnClickOutside } from '@/hooks';
 import type { ISelectOption } from '@/interfaces';
 import type { SelectProps } from './select.props';
@@ -24,7 +25,7 @@ const Select = ({
   const [selectDropdownHeight, setSelectDropdownHeight] = useState<number>(0);
   const selectRef = useRef<HTMLDivElement | null>(null);
   const selectDropdownRef = useRef<HTMLDivElement | null>(null);
-  const dropdownPosition = useElementPosition(selectRef, selectDropdownHeight);
+  const dropdownPosition = useElementPosition(selectRef, Position.BOTTOM, selectDropdownHeight);
   const isSelectDisabled = isDisabled || !items.length;
   const isMultiSelect = useMemo(() => Array.isArray(value), [value]);
 

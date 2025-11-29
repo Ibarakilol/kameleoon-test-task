@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as d3 from 'd3';
 import { observer } from 'mobx-react-lite';
 
+import Loader from '@/components/ui/loader';
 import ChartPopup from './components/chart-popup';
 import ChartSettings from './components/chart-settings';
 
@@ -17,16 +18,19 @@ const Chart = observer(() => {
   const {
     chartVariations,
     filteredChartData,
+    isChartDataLoading,
+    isChartVariationsLoading,
     selectedInterval,
     selectedLineStyle,
     clearStore,
     init,
   } = chartStore;
+  const isLoading = isChartDataLoading || isChartVariationsLoading;
   const { linesData, variations } = filteredChartData;
   const [chartPopupData, setChartPopupData] = useState<IChartPopupData | null>(null);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
-  const popupRef = useRef<HTMLDivElement | null>(null);
+  const chartPopupRef = useRef<HTMLDivElement | null>(null);
   const hidePopup = useRef<(() => void) | null>(null);
   const zoomRef = useRef<d3.ZoomBehavior<SVGSVGElement, unknown> | null>(null);
   const zoomTransformRef = useRef(d3.zoomIdentity);
@@ -57,7 +61,6 @@ const Chart = observer(() => {
 
     const selection = d3.select(svgRef.current).transition().duration(250);
     const currentTransform = zoomTransformRef.current;
-    let newScale: number;
 
     const resetZoom = () => {
       selection.call(zoomRef.current!.transform, d3.zoomIdentity);
@@ -66,16 +69,16 @@ const Chart = observer(() => {
 
     switch (zoom) {
       case 'in':
-        newScale = Math.min(8, currentTransform.k * 1.3);
-        selection.call(zoomRef.current.scaleTo, newScale);
+        const zoomInScale = Math.min(8, currentTransform.k * 1.3);
+        selection.call(zoomRef.current.scaleTo, zoomInScale);
         break;
       case 'out':
-        newScale = Math.max(1, currentTransform.k * 0.7);
+        const zoomOutScale = Math.max(1, currentTransform.k * 0.7);
 
-        if (newScale <= 1.1) {
+        if (zoomOutScale <= 1.1) {
           resetZoom();
         } else {
-          selection.call(zoomRef.current.scaleTo, newScale);
+          selection.call(zoomRef.current.scaleTo, zoomOutScale);
         }
 
         break;
@@ -268,7 +271,7 @@ const Chart = observer(() => {
 
     hidePopup.current = () => {
       setTimeout(() => {
-        if (!popupRef.current?.matches(':hover')) {
+        if (!chartPopupRef.current?.matches(':hover')) {
           setChartPopupData(null);
           hoverLine.style('opacity', 0);
         }
@@ -331,6 +334,7 @@ const Chart = observer(() => {
   return (
     <div className="chart">
       <ChartSettings
+        isLoading={isLoading}
         handleExportChart={handleExportChart}
         handleZoomIn={() => handleChartZoom('in')}
         handleZoomOut={() => handleChartZoom('out')}
@@ -341,11 +345,12 @@ const Chart = observer(() => {
         <svg ref={svgRef} />
         {chartPopupData && (
           <ChartPopup
-            ref={popupRef}
+            ref={chartPopupRef}
             chartPopupData={chartPopupData}
             handleMouseLeave={hidePopup.current!}
           />
         )}
+        {isLoading && <Loader />}
       </div>
     </div>
   );

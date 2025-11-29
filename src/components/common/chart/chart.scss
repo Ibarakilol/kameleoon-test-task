@@ -10,7 +10,10 @@
 }
 
 .chart__wrapper {
+  height: 300px;
+  max-width: 1303px;
   position: relative;
+  width: 100%;
 }
 
 .chart__x-axis,

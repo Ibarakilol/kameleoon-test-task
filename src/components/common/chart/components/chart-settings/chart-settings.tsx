@@ -18,13 +18,18 @@ import type { ChartSettingsProps } from './chart-settings.props';
 import './chart-settings.scss';
 
 const ChartSettings = observer(
-  ({ handleExportChart, handleZoomIn, handleZoomOut, handleZoomReset }: ChartSettingsProps) => {
+  ({
+    isLoading,
+    handleExportChart,
+    handleZoomIn,
+    handleZoomOut,
+    handleZoomReset,
+  }: ChartSettingsProps) => {
     const { theme, toggleTheme } = useTheme();
     const {
       chartIntervalOptions,
       chartLineStyleOptions,
       chartVariationOptions,
-      isChartDataLoading,
       isChartVariationsLoading,
       selectedInterval,
       selectedLineStyle,
@@ -33,8 +38,6 @@ const ChartSettings = observer(
       setSelectedLineStyle,
       toggleVariation,
     } = chartStore;
-
-    const isLoading = isChartVariationsLoading || isChartDataLoading;
 
     return (
       <div className="chart-settings">

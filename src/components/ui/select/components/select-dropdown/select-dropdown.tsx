@@ -8,7 +8,7 @@ import type { SelectDropdownProps } from './select-dropdown.props';
 import './select-dropdown.scss';
 
 const SelectDropdown = forwardRef<HTMLDivElement, SelectDropdownProps>(
-  ({ isMultiSelect, isOptional, items, position = 'bottom', value, handleChange }, ref) => {
+  ({ isMultiSelect, isOptional, items, position, value, handleChange }, ref) => {
     const getIsItemActive = useCallback(
       (itemId: string) => {
         if (!isMultiSelect) {
@@ -21,13 +21,7 @@ const SelectDropdown = forwardRef<HTMLDivElement, SelectDropdownProps>(
     );
 
     return (
-      <div
-        className={clsx(
-          'select-dropdown',
-          position === 'bottom' ? 'select-dropdown_bottom' : 'select-dropdown_top'
-        )}
-        ref={ref}
-      >
+      <div className={clsx('select-dropdown', `select-dropdown_${position}`)} ref={ref}>
         <div className="select-dropdown__wrapper scrollbar">
           <div className="select-dropdown__container">
             {isOptional && (
