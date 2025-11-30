@@ -8,6 +8,7 @@ import ChartSettings from './components/chart-settings';
 
 import chartStore from '@/stores/chart-store';
 
+import { CHART_LINE_COLORS } from '@/constants';
 import { useResizeObserver } from '@/hooks';
 import { exportHTMLToPNG } from '@/utils';
 import type { IChartLine, IChartPopupConversionRate, IChartPopupData } from '@/interfaces';
@@ -17,6 +18,7 @@ import './chart.scss';
 const Chart = observer(() => {
   const {
     chartVariations,
+    chartVariationIds,
     filteredChartData,
     isChartDataLoading,
     isChartVariationsLoading,
@@ -26,7 +28,6 @@ const Chart = observer(() => {
     init,
   } = chartStore;
   const isLoading = isChartDataLoading || isChartVariationsLoading;
-  const { linesData, variations } = filteredChartData;
   const [chartPopupData, setChartPopupData] = useState<IChartPopupData | null>(null);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -50,7 +51,7 @@ const Chart = observer(() => {
 
   useResizeObserver(wrapperRef, updateDimensions);
 
-  const handleExportChart = async () => {
+  const handleChartExport = async () => {
     await exportHTMLToPNG(wrapperRef, 'chart');
   };
 
@@ -128,15 +129,7 @@ const Chart = observer(() => {
 
         svg.select<SVGGElement>('.chart__x-axis').call(xAxis.scale(newX));
 
-        svg.selectAll<SVGPathElement, IChartLine[]>('path.chart__line').attr('d', (datum) =>
-          d3
-            .line<IChartLine>()
-            .x(({ date }) => newX(date))
-            .y(({ conversionRate }) => yScale(conversionRate))
-            .curve(selectedLineStyle === 'smooth' ? d3.curveMonotoneX : d3.curveLinear)(datum)
-        );
-
-        svg.selectAll<SVGPathElement, IChartLine[]>('path.chart__area').attr('d', (datum) =>
+        svg.selectAll<SVGPathElement, IChartLine[]>('.chart__area').attr('d', (datum) =>
           d3
             .area<IChartLine>()
             .x(({ date }) => newX(date))
@@ -144,9 +137,27 @@ const Chart = observer(() => {
             .y1(({ conversionRate }) => yScale(conversionRate))
             .curve(d3.curveMonotoneX)(datum)
         );
+
+        svg.selectAll<SVGPathElement, IChartLine[]>('.chart__line').attr('d', (datum) =>
+          d3
+            .line<IChartLine>()
+            .x(({ date }) => newX(date))
+            .y(({ conversionRate }) => yScale(conversionRate))
+            .curve(selectedLineStyle === 'smooth' ? d3.curveMonotoneX : d3.curveLinear)(datum)
+        );
       });
 
-    d3.select(svgRef.current).call(zoomRef.current!);
+    d3.select(svgRef.current).call(zoomRef.current!).on('wheel.zoom', null);
+
+    svg
+      .append('defs')
+      .append('clipPath')
+      .attr('id', 'chartArea')
+      .append('rect')
+      .attr('x', 0)
+      .attr('y', 0)
+      .attr('width', width)
+      .attr('height', height);
 
     const chartArea = svg
       .append('rect')
@@ -159,8 +170,10 @@ const Chart = observer(() => {
       .style('stroke-width', 1)
       .style('pointer-events', 'all');
 
-    const linesDataDates = linesData.flatMap(({ values }) => values.map(({ date }) => date));
-    const linesDataConversionRates = linesData.flatMap(({ values }) =>
+    const linesDataDates = filteredChartData.flatMap(({ values }) =>
+      values.map(({ date }) => date)
+    );
+    const linesDataConversionRates = filteredChartData.flatMap(({ values }) =>
       values.map(({ conversionRate }) => conversionRate)
     );
 
@@ -194,7 +207,7 @@ const Chart = observer(() => {
       .attr('transform', `translate(0,${height})`)
       .call(xAxis);
     svg.append('g').attr('class', 'chart__y-axis').call(yAxis);
-    svg.selectAll('.domain').remove();
+    svg.selectAll('.domain').attr('opacity', 0);
 
     const hoverLine = svg
       .append('line')
@@ -208,13 +221,15 @@ const Chart = observer(() => {
 
     const updatePopup = (evt: any) => {
       const [xCoord] = d3.pointer(evt);
-      const hoverDate = xScale.invert(xCoord);
+      const transform = zoomTransformRef.current;
+      const currentXScale = transform.rescaleX(xScale);
+      const hoverDate = currentXScale.invert(xCoord);
       const conversionRates: IChartPopupConversionRate[] = [];
       let dateValue = '';
       let xAxisValue = 0;
       let yAxisValue = 0;
 
-      linesData.forEach(({ id, values }) => {
+      filteredChartData.forEach(({ id, values }) => {
         if (!values.length) {
           return;
         }
@@ -233,7 +248,7 @@ const Chart = observer(() => {
 
         if (!conversionRates.length) {
           dateValue = d3.timeFormat('%d/%m/%Y')(date);
-          xAxisValue = xScale(date);
+          xAxisValue = currentXScale(date);
           yAxisValue = yScale(conversionRate);
         }
 
@@ -280,9 +295,12 @@ const Chart = observer(() => {
 
     chartArea.on('mousemove', updatePopup).on('mouseleave', hidePopup.current);
 
-    const colorScheme = d3.scaleOrdinal<string>().domain(variations).range(d3.schemeCategory10);
+    const colorScheme = d3
+      .scaleOrdinal<string>()
+      .domain(chartVariationIds)
+      .range(CHART_LINE_COLORS);
 
-    linesData.forEach(({ id, values }) => {
+    filteredChartData.forEach(({ id, values }) => {
       const lineColor = colorScheme(id);
 
       if (selectedLineStyle === 'area') {
@@ -296,6 +314,7 @@ const Chart = observer(() => {
         svg
           .append('path')
           .datum(values)
+          .attr('clip-path', 'url(#chartArea)')
           .attr('class', 'chart__area')
           .attr('d', area)
           .style('fill', lineColor)
@@ -313,6 +332,7 @@ const Chart = observer(() => {
         svg
           .append('path')
           .datum(values)
+          .attr('clip-path', 'url(#chartArea)')
           .attr('class', 'chart__line')
           .attr('d', line)
           .style('stroke', lineColor)
@@ -322,23 +342,21 @@ const Chart = observer(() => {
       }
     });
   }, [
+    chartVariationIds,
     chartVariations,
     dimensions,
-    linesData,
+    filteredChartData,
     margin,
     selectedInterval,
     selectedLineStyle,
-    variations,
   ]);
 
   return (
     <div className="chart">
       <ChartSettings
         isLoading={isLoading}
-        handleExportChart={handleExportChart}
-        handleZoomIn={() => handleChartZoom('in')}
-        handleZoomOut={() => handleChartZoom('out')}
-        handleZoomReset={() => handleChartZoom('reset')}
+        handleChartExport={handleChartExport}
+        handleChartZoom={handleChartZoom}
       />
 
       <div className="chart__wrapper" ref={wrapperRef}>

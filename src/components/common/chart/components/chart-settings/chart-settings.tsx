@@ -18,13 +18,7 @@ import type { ChartSettingsProps } from './chart-settings.props';
 import './chart-settings.scss';
 
 const ChartSettings = observer(
-  ({
-    isLoading,
-    handleExportChart,
-    handleZoomIn,
-    handleZoomOut,
-    handleZoomReset,
-  }: ChartSettingsProps) => {
+  ({ isLoading, handleChartExport, handleChartZoom }: ChartSettingsProps) => {
     const { theme, toggleTheme } = useTheme();
     const {
       chartIntervalOptions,
@@ -76,7 +70,7 @@ const ChartSettings = observer(
                 ariaLabel="Export chart"
                 icon={<ExportIcon />}
                 isDisabled={isLoading}
-                onClick={handleExportChart}
+                onClick={handleChartExport}
               />
             </div>
 
@@ -86,21 +80,21 @@ const ChartSettings = observer(
                 ariaLabel="Zoom out"
                 icon={<MinusIcon />}
                 isDisabled={isLoading}
-                onClick={handleZoomOut}
+                onClick={() => handleChartZoom('out')}
               />
               <IconButton
                 className="chart-settings__zoom-in"
                 ariaLabel="Zoom in"
                 icon={<PlusIcon />}
                 isDisabled={isLoading}
-                onClick={handleZoomIn}
+                onClick={() => handleChartZoom('in')}
               />
               <IconButton
                 ariaLabel="Reset zoom"
                 icon={<RefreshIcon />}
                 isDisabled={isLoading}
                 theme="halo"
-                onClick={handleZoomReset}
+                onClick={() => handleChartZoom('reset')}
               />
             </div>
           </div>

@@ -82,17 +82,14 @@ class ChartStore {
     }));
   }
 
+  get chartVariationIds() {
+    return this.chartVariations.map(({ id }) => (typeof id === 'number' ? id.toString() : '0'));
+  }
+
   get filteredChartData() {
     const variations = this.selectedVariations.length
       ? this.selectedVariations
-      : Array.from(
-          new Set(
-            this.chartData.flatMap(({ conversions, visits }) => [
-              ...Object.keys(conversions),
-              ...Object.keys(visits),
-            ])
-          )
-        );
+      : this.chartVariationIds;
 
     const data = this.selectedVariations.length
       ? this.chartData.map(({ conversions, date, visits }) => ({
@@ -110,15 +107,13 @@ class ChartStore {
         }))
       : this.chartData;
 
-    const linesData = variations.map((variation) => ({
+    return variations.map((variation) => ({
       id: variation,
       values: data.map(({ conversions, date, visits }) => ({
         date: new Date(date),
         conversionRate: ((conversions[variation] || 0) / (visits[variation] || 1)) * 100,
       })),
     }));
-
-    return { linesData, variations };
   }
 
   async loadChartVariations() {
